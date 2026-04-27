@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ESG Query Workflow Explainer</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --ink: #1b2430;
+      --muted: #4f6175;
+      --line: #d5deea;
+      --accent: #0d8f6f;
+      --accent-2: #0a6e8a;
+      --chip: #eef5ff;
+      --code-bg: #101828;
+      --code-ink: #e5e7eb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at 0% 0%, #e8f7f3 0, transparent 45%), var(--bg);
+      line-height: 1.5;
+    }
+    main {
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 16px 32px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 14px rgba(16, 24, 40, 0.04);
+    }
+    h1, h2, h3 { margin: 0 0 10px; line-height: 1.25; }
+    h1 { font-size: 1.8rem; color: #0b475b; }
+    h2 { font-size: 1.2rem; color: #0b5d58; }
+    h3 { font-size: 1rem; color: #0b5d58; }
+    p { margin: 6px 0; }
+    .muted { color: var(--muted); }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .flow button {
+      border: 1px solid var(--line);
+      background: #f9fbfe;
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: left;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .flow button.active {
+      border-color: var(--accent-2);
+      background: #e8f4ff;
+    }
+
+    .step-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .chip {
+      display: inline-block;
+      background: var(--chip);
+      border: 1px solid #d4e6ff;
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 0.85rem;
+      margin: 0 6px 6px 0;
+    }
+    ul { margin: 8px 0 0 18px; }
+
+    pre {
+      margin: 8px 0 0;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #27354d;
+      background: var(--code-bg);
+      color: var(--code-ink);
+      overflow-x: auto;
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
+    .tok-keyword { color: #93c5fd; font-weight: 600; }
+    .tok-string { color: #86efac; }
+    .tok-number { color: #fca5a5; }
+    .tok-comment { color: #94a3b8; font-style: italic; }
+    .tok-operator { color: #fcd34d; font-weight: 600; }
+    .tok-const { color: #c4b5fd; }
+
+    .sim-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 0.95rem;
+      background: #fff;
+    }
+
+    @media (max-width: 900px) {
+      .flow { grid-template-columns: 1fr 1fr; }
+      .step-grid, .sim-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card">
+      <h1>ESG Query Workflow Explainer</h1>
+      <p class="muted">Interactive walkthrough of the repo pipeline: schema enrichment -> MQL generation -> guardrails/execution -> response synthesis.</p>
+      <div class="flow" id="flow"></div>
+    </section>
+
+    <section class="card" id="step-card">
+      <h2 id="step-title"></h2>
+      <p id="step-summary" class="muted"></p>
+      <div class="step-grid">
+        <div>
+          <h3>Important Functions</h3>
+          <div id="step-functions"></div>
+          <h3>What Happens</h3>
+          <ul id="step-bullets"></ul>
+        </div>
+        <div>
+          <h3>Repository Code Sample</h3>
+          <pre><code id="step-code"></code></pre>
+        </div>
+      </div>
+      <h3 style="margin-top:12px;">Prompt Sample (from `agent/prompts.py`)</h3>
+      <pre><code id="step-prompt"></code></pre>
+    </section>
+
+    <section class="card">
+      <h2>Mini Scenario Simulator</h2>
+      <p class="muted">Switch questions to see how each stage would behave in this project.</p>
+      <select id="scenario-select"></select>
+      <div class="sim-grid">
+        <div>
+          <h3>Generated MQL (illustrative)</h3>
+          <pre><code id="sim-mql"></code></pre>
+        </div>
+        <div>
+          <h3>Guardrail + Synthesis Outcome</h3>
+          <pre><code id="sim-outcome"></code></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function highlightSnippet(text) {
+      let raw = text;
+      const tokens = [];
+
+      function protect(pattern, cls) {
+        raw = raw.replace(pattern, (m) => {
+          const key = `@@TOK_${tokens.length}@@`;
+          tokens.push({ key, html: `<span class="${cls}">${escapeHtml(m)}</span>` });
+          return key;
+        });
+      }
+
+      // Protect in this order so comments do not capture text inside strings.
+      protect(/(\"([^\"\\]|\\.)*\")/g, "tok-string");
+      protect(/('([^'\\]|\\.)*')/g, "tok-string");
+      protect(/(^|\s)(#.*)$/gm, "tok-comment");
+
+      let html = escapeHtml(raw);
+
+      // Mongo operators like $match, $group, $limit
+      html = html.replace(/(\$[A-Za-z_][A-Za-z0-9_]*)/g, '<span class="tok-operator">$1</span>');
+
+      // Numbers
+      html = html.replace(/\b(\d+(\.\d+)?)\b/g, '<span class="tok-number">$1</span>');
+
+      // Python/JS keywords
+      html = html.replace(
+        /\b(def|return|if|else|for|in|try|except|const|let|function|new|true|false|null)\b/g,
+        '<span class="tok-keyword">$1</span>'
+      );
+
+      // Common constants and identifiers in this repo
+      html = html.replace(
+        /\b(MAX_QUERY_TIME_MS|MAX_RESULT_LIMIT|SYSTEM_PROMPT|FEW_SHOT_EXAMPLES|NonESGQueryError)\b/g,
+        '<span class="tok-const">$1</span>'
+      );
+
+      for (const t of tokens) {
+        html = html.replace(t.key, t.html);
+      }
+
+      return html;
+    }
+
+    function colorizeCode(el) {
+      const raw = el.dataset.rawCode ?? el.textContent;
+      el.dataset.rawCode = raw;
+      el.innerHTML = highlightSnippet(raw);
+    }
+
+    function colorizeAllCode() {
+      document.querySelectorAll("pre code").forEach(colorizeCode);
+    }
+
+    const systemPromptExcerpt = `CRITICAL RULES:
+1. ONLY use fields from the queryable_fields list provided in the schema context.
+2. NEVER use $regex on any field.
+3. Always use aggregation pipelines for grouping, averaging, ranking, or trend analysis.
+4. Use find() only for simple lookups and filters.
+5. Always include a filter in your queries — never query without one.`;
+
+    const fewShotExample = `Question: Top 5 companies by renewable energy percentage
+Answer:
+{
+  "collection": "esg_emissions",
+  "query_type": "find",
+  "filter": {"reporting_year": 2023},
+  "projection": {"company.name": 1, "company.ticker": 1, "energy.renewable_pct": 1, "_id": 0},
+  "sort": {"energy.renewable_pct": -1},
+  "limit": 5
+}`;
+
+    const steps = [
+      {
+        name: "1) Schema Enrichment",
+        summary: "Builds and injects rich schema context (fields, enums, indexes, examples) so the model knows what is legal and meaningful.",
+        functions: [
+          "data/schema_registry.py -> build_registry",
+          "agent/tools.py -> get_schema_context",
+          "agent/agent.py -> enrich_context"
+        ],
+        bullets: [
+          "Reads esg_schema_registry docs and converts them to a plain-text prompt context.",
+          "Includes queryable field allowlist, enum values, index metadata, and sample docs.",
+          "Stores context in graph state as schema_context for the next node."
+        ],
+        code: `def get_schema_context(db) -> str:
+    registry = db[COLLECTIONS["schema_registry"]]
+    docs = list(registry.find())
+    ...
+    for field in doc.get("queryable_fields", []):
+        desc = doc.get("field_descriptions", {}).get(field, "")
+        part += f"  - {field}: {desc}\\n"
+    ...
+    for idx in doc.get("indexes", []):
+        part += f"  - {idx['name']}: {idx['keys']}\\n"`,
+        prompt: `${systemPromptExcerpt}\n\n{schema_context}`
+      },
+      {
+        name: "2) MQL Generation",
+        summary: "Constructs system + few-shot + user prompt, calls the LLM, and parses JSON into structured query intent.",
+        functions: [
+          "agent/agent.py -> generate_mql",
+          "agent/prompts.py -> SYSTEM_PROMPT, format_few_shot_messages",
+          "agent/tools.py -> parse_llm_response"
+        ],
+        bullets: [
+          "Assembles messages: system prompt + few-shot pairs + user question.",
+          "Invokes ChatOpenAI with temperature=0 for deterministic output.",
+          "Parses model response; non-JSON paths are treated as NonESGQueryError."
+        ],
+        code: `messages = [{"role": "system", "content": system_msg}]
+messages.extend(few_shot)
+messages.append({"role": "user", "content": state["user_message"]})
+
+response = self.llm.invoke(messages)
+raw_response = response.content
+parsed = parse_llm_response(raw_response)`,
+        prompt: `${systemPromptExcerpt}\n\nFew-shot sample:\n${fewShotExample}`
+      },
+      {
+        name: "3) Guardrails + Execution",
+        summary: "Validates generated query against field allowlist and index coverage, injects safety limits, then executes against MongoDB.",
+        functions: [
+          "agent/guardrails.py -> validate_and_execute",
+          "agent/guardrails.py -> check_field_allowlist, check_index_coverage, inject_safety",
+          "agent/tools.py -> execute_parsed_query"
+        ],
+        bullets: [
+          "Extracts fields from filter/pipeline and rejects disallowed fields.",
+          "Rejects unindexed filter fields to avoid collection scans.",
+          "Adds MAX_RESULT_LIMIT (or $limit), enforces MAX_QUERY_TIME_MS, and writes audit log."
+        ],
+        code: `# Guardrail 1: field allowlist
+self.check_field_allowlist(collection_name, all_fields)
+
+# Guardrail 2: index coverage
+self.check_index_coverage(collection_name, filter_fields)
+
+# Guardrail 3: safety
+query_or_pipeline = self.inject_safety(query_or_pipeline)
+...
+results = list(coll.aggregate(query_or_pipeline, maxTimeMS=MAX_QUERY_TIME_MS))`,
+        prompt: `Output must include collection + query_type + filter/pipeline JSON.
+Rules enforced by guardrails after generation:\n- allowlisted fields only\n- indexed filters only\n- maxTimeMS + limit + audit logging`
+      },
+      {
+        name: "4) Response Synthesis",
+        summary: "Turns query results into user-facing markdown/table output, or clear rejection/error explanations.",
+        functions: [
+          "agent/agent.py -> synthesize_response",
+          "agent/agent.py -> _format_results_as_table"
+        ],
+        bullets: [
+          "If guardrail blocks query, returns explicit reason and rephrase guidance.",
+          "If success, prepends query explanation and renders flattened table rows.",
+          "If no rows, returns a no-results message."
+        ],
+        code: `if not result.get("success"):
+    return {
+      "response": f"Your query was blocked by the **{guardrail}** guardrail: {error_msg}"
+    }
+...
+response_parts = [explanation]
+response_parts.append(_format_results_as_table(results[:20]))`,
+        prompt: `Synthesis uses the explanation field produced in generated MQL:
+"explanation": "Brief explanation of what this query does"`
+      }
+    ];
+
+    const scenarios = [
+      {
+        label: "Valid: Top renewable leaders",
+        mql: `{
+  "collection": "esg_emissions",
+  "query_type": "find",
+  "filter": {"reporting_year": 2023},
+  "sort": {"energy.renewable_pct": -1},
+  "limit": 5
+}`,
+        outcome: `Guardrails: PASS
+- Field allowlist: ok
+- Index coverage: reporting_year index found
+- Safety: maxTimeMS + limit enforced
+
+Synthesis: returns explanation + markdown table (up to 20 rows shown).`
+      },
+      {
+        label: "Blocked: Unindexed name-only filter",
+        mql: `{
+  "collection": "esg_emissions",
+  "query_type": "find",
+  "filter": {"company.name": "Apple Inc.", "reporting_year": 2023}
+}`,
+        outcome: `Guardrails: BLOCKED (index_coverage)
+No index covers filter on field(s): ["company.name"]
+
+Synthesis: user gets rejection reason + rephrasing guidance
+("use indexed fields, add specific filter").`
+      },
+      {
+        label: "Out-of-scope: Non-ESG question",
+        mql: `Model returns explanatory text (not JSON) -> parse_llm_response raises NonESGQueryError.`,
+        outcome: `Generation stage marks request as outside ESG scope.
+No Mongo query executed.
+
+Synthesis: returns ESG scope guidance (emissions, social, governance topics).`
+      }
+    ];
+
+    const flow = document.getElementById("flow");
+    const title = document.getElementById("step-title");
+    const summary = document.getElementById("step-summary");
+    const functionsEl = document.getElementById("step-functions");
+    const bulletsEl = document.getElementById("step-bullets");
+    const codeEl = document.getElementById("step-code");
+    const promptEl = document.getElementById("step-prompt");
+
+    let activeStep = 0;
+
+    function renderFlow() {
+      flow.innerHTML = "";
+      steps.forEach((s, i) => {
+        const btn = document.createElement("button");
+        btn.textContent = s.name;
+        if (i === activeStep) btn.classList.add("active");
+        btn.onclick = () => {
+          activeStep = i;
+          renderFlow();
+          renderStep();
+        };
+        flow.appendChild(btn);
+      });
+    }
+
+    function renderStep() {
+      const s = steps[activeStep];
+      title.textContent = s.name;
+      summary.textContent = s.summary;
+      functionsEl.innerHTML = s.functions.map((f) => `<span class="chip">${f}</span>`).join("");
+      bulletsEl.innerHTML = s.bullets.map((b) => `<li>${b}</li>`).join("");
+      codeEl.textContent = s.code;
+      promptEl.textContent = s.prompt;
+      codeEl.dataset.rawCode = s.code;
+      promptEl.dataset.rawCode = s.prompt;
+      colorizeCode(codeEl);
+      colorizeCode(promptEl);
+    }
+
+    const scenarioSelect = document.getElementById("scenario-select");
+    const simMql = document.getElementById("sim-mql");
+    const simOutcome = document.getElementById("sim-outcome");
+
+    scenarios.forEach((s, i) => {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = s.label;
+      scenarioSelect.appendChild(opt);
+    });
+
+    function renderScenario() {
+      const s = scenarios[Number(scenarioSelect.value || 0)];
+      simMql.textContent = s.mql;
+      simOutcome.textContent = s.outcome;
+      simMql.dataset.rawCode = s.mql;
+      simOutcome.dataset.rawCode = s.outcome;
+      colorizeCode(simMql);
+      colorizeCode(simOutcome);
+    }
+
+    scenarioSelect.addEventListener("change", renderScenario);
+
+    renderFlow();
+    renderStep();
+    renderScenario();
+    colorizeAllCode();
+  </script>
+</body>
+</html>

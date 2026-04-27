@@ -1,0 +1,9 @@
+langchain>=0.3.0
+langchain-mongodb>=0.6.0
+langgraph>=0.2.0
+langchain-openai>=0.2.0
+pymongo>=4.8
+streamlit>=1.38
+pandas>=2.1
+plotly>=5.18
+python-dotenv>=1.0

@@ -1,0 +1,256 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 4475 >>
+stream
+q
+0.0000 0.2500 0.3500 rg
+0.0 742.0 595.0 100.0 re f
+0.0000 0.7300 0.4500 rg
+0.0 736.0 595.0 8.0 re f
+/F2 23 Tf
+1.0000 1.0000 1.0000 rg
+1 0 0 1 40.0 792.0 Tm
+(MongoDB Flow: Natural Language to Trusted Results) Tj
+/F1 12 Tf
+0.7800 1.0000 0.9000 rg
+1 0 0 1 40.0 766.0 Tm
+(Natural Language -> Query Generation -> Guardrails -> Result) Tj
+/F2 13 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 40.0 720.0 Tm
+(1\) Natural Language Input) Tj
+/F1 10 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 40.0 702.0 Tm
+(A user asks a business question in plain English. The agent extracts intent, entities, time) Tj
+/F1 10 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 40.0 687.0 Tm
+(windows, and required metrics.) Tj
+0.9500 0.9700 0.9900 rg
+40.0 618.0 515.0 58.0 re f
+0.8200 0.8700 0.9200 RG
+1.0 w
+40.0 618.0 515.0 58.0 re S
+/F2 10 Tf
+0.3200 0.3700 0.4200 rg
+1 0 0 1 50.0 660.0 Tm
+(Example user prompt) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 644.0 Tm
+("Show Scope 1 emissions for semiconductor companies in 2024,) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 632.0 Tm
+(sorted by highest emissions and limited to 25 records.") Tj
+/F2 13 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 40.0 604.0 Tm
+(2\) Query Generation) Tj
+/F2 12 Tf
+0.0000 0.2500 0.3500 rg
+1 0 0 1 44.0 586.0 Tm
+(-) Tj
+/F1 10 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 56.0 586.0 Tm
+(The agent maps business phrases to the approved collection schema and legal MongoDB) Tj
+/F1 10 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 56.0 572.0 Tm
+(operators.) Tj
+/F2 12 Tf
+0.0000 0.2500 0.3500 rg
+1 0 0 1 44.0 557.0 Tm
+(-) Tj
+/F1 10 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 56.0 557.0 Tm
+(Output is deterministic and machine-checkable before any database execution.) Tj
+0.9500 0.9700 0.9900 rg
+40.0 430.0 515.0 118.0 re f
+0.8200 0.8700 0.9200 RG
+1.0 w
+40.0 430.0 515.0 118.0 re S
+/F2 10 Tf
+0.3200 0.3700 0.4200 rg
+1 0 0 1 50.0 532.0 Tm
+(Generated MQL plan \(pre-guardrails\)) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 516.0 Tm
+({) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 504.0 Tm
+(  "collection": "esg_emissions",) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 492.0 Tm
+(  "query": {"company.sector": "Semiconductors", "reporting_year": 2024},) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 480.0 Tm
+(  "projection": {"company.ticker": 1, "scope1_emissions": 1, "_id": 0},) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 468.0 Tm
+(  "sort": {"scope1_emissions": -1},) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 456.0 Tm
+(  "limit": 25) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 444.0 Tm
+(}) Tj
+/F2 13 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 40.0 416.0 Tm
+(3\) Guardrails) Tj
+/F2 12 Tf
+0.0000 0.2500 0.3500 rg
+1 0 0 1 44.0 398.0 Tm
+(-) Tj
+/F1 10 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 56.0 398.0 Tm
+(Field allowlist: blocks unknown or policy-restricted fields.) Tj
+/F2 12 Tf
+0.0000 0.2500 0.3500 rg
+1 0 0 1 44.0 383.0 Tm
+(-) Tj
+/F1 10 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 56.0 383.0 Tm
+(Index coverage: requires indexed filter paths to avoid collection scans.) Tj
+/F2 12 Tf
+0.0000 0.2500 0.3500 rg
+1 0 0 1 44.0 368.0 Tm
+(-) Tj
+/F1 10 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 56.0 368.0 Tm
+(Safety injection: enforces maxTimeMS and hard result limits.) Tj
+0.9500 0.9700 0.9900 rg
+40.0 253.0 515.0 106.0 re f
+0.8200 0.8700 0.9200 RG
+1.0 w
+40.0 253.0 515.0 106.0 re S
+/F2 10 Tf
+0.3200 0.3700 0.4200 rg
+1 0 0 1 50.0 343.0 Tm
+(Blocked response shape) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 327.0 Tm
+({) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 315.0 Tm
+(  "success": false,) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 303.0 Tm
+(  "guardrail": "index_coverage",) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 291.0 Tm
+(  "error": "No indexed filter field found",) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 279.0 Tm
+(  "details": {"required": ["company.ticker", "reporting_year"]}) Tj
+/F3 9 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 50.0 267.0 Tm
+(}) Tj
+/F2 13 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 40.0 239.0 Tm
+(4\) Trusted Result) Tj
+/F2 12 Tf
+0.0000 0.2500 0.3500 rg
+1 0 0 1 44.0 221.0 Tm
+(-) Tj
+/F1 10 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 56.0 221.0 Tm
+(Only validated queries execute against MongoDB.) Tj
+/F2 12 Tf
+0.0000 0.2500 0.3500 rg
+1 0 0 1 44.0 206.0 Tm
+(-) Tj
+/F1 10 Tf
+0.1300 0.1700 0.2200 rg
+1 0 0 1 56.0 206.0 Tm
+(Results include clear user-facing output plus traceable guardrail context.) Tj
+/F2 10 Tf
+0.0000 0.2500 0.3500 rg
+1 0 0 1 40.0 46.0 Tm
+(Outcome: faster insight with governance, reliability, and predictable performance.) Tj
+Q
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+7 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000261 00000 n 
+0000004788 00000 n 
+0000004858 00000 n 
+0000004933 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+5001
+%%EOF
+1 0 obj
+<< /Info 9 0 R /Pages 2 0 R /Type /Catalog >>
+endobj
+3 0 obj
+<< /Resources << /Font << /F3 7 0 R /F1 5 0 R /F2 6 0 R >> >> /Parent 2 0 R
+/Type /Page /Rotate 90 /MediaBox [ 0 0 595 842 ] /Contents 4 0 R >>
+endobj
+8 0 obj
+<< /Producer (macOS Version 26.4.1 \(Build 25E253\) Quartz PDFContext, AppendMode 1.1)
+/ModDate (D:20260420204515Z00'00') >>
+endobj
+9 0 obj
+8 0 R
+endobj
+xref
+0 2
+0000000000 65535 f 
+0000005225 00000 n 
+3 1
+0000005286 00000 n 
+8 2
+0000005445 00000 n 
+0000005585 00000 n 
+trailer
+<< /ID [<><D63844BC5F53EE41C3FE664B19F9FD39> ] /Root 1 0 R /Size 10 /Prev 5001 >> 
+startxref
+5606
+%%EOF

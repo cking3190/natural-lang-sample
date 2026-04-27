@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Guardrail Blocked Query Display</title>
+  <style>
+    :root {
+      --bg: #f7f9fc;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #4b5563;
+      --border: #dbe3ee;
+      --accent: #0f766e;
+      --code-bg: #0b1020;
+      --code-text: #e5e7eb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 32px auto;
+      padding: 0 16px 40px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    h1, h2, h3 { margin: 0 0 10px; line-height: 1.3; }
+    h1 { font-size: 1.8rem; color: #0b3d3b; }
+    h2 { font-size: 1.25rem; color: #0f4c5c; margin-top: 6px; }
+    h3 { font-size: 1.05rem; margin-top: 10px; }
+    p { margin: 8px 0; }
+    ul, ol { margin: 8px 0 0 20px; }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: #eef2ff;
+      padding: 1px 6px;
+      border-radius: 6px;
+      font-size: 0.92em;
+    }
+    pre {
+      margin: 10px 0 0;
+      background: var(--code-bg);
+      color: var(--code-text);
+      border-radius: 10px;
+      padding: 14px;
+      overflow-x: auto;
+      border: 1px solid #1f2a44;
+    }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .step {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      background: #f8fffe;
+    }
+    .step strong { color: var(--accent); }
+    .note {
+      border-left: 4px solid #f59e0b;
+      background: #fff7ed;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #7c2d12;
+      margin-top: 10px;
+    }
+    .ok {
+      border-left: 4px solid #16a34a;
+      background: #f0fdf4;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #14532d;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>Guardrail Blocked Query Display</h1>
+      <p>This page explains exactly how the app displays a pretty-formatted query when guardrails reject a request.</p>
+    </section>
+
+    <section class="card">
+      <h2>1) End-to-End Flow</h2>
+      <div class="flow">
+        <div class="step"><strong>Step 1:</strong> User submits a question in <code>app.py</code>.</div>
+        <div class="step"><strong>Step 2:</strong> <code>generate_mql</code> in <code>agent/agent.py</code> calls the LLM and saves <code>generated_mql</code>.</div>
+        <div class="step"><strong>Step 3:</strong> <code>validate_execute</code> runs guardrails via <code>execute_parsed_query(...)</code>.</div>
+        <div class="step"><strong>Step 4:</strong> On rejection, guardrails return <code>success: false</code>, <code>guardrail</code>, and <code>error</code>.</div>
+        <div class="step"><strong>Step 5:</strong> UI reads <code>query_result</code> + <code>generated_mql</code> and renders formatted JSON.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2) Guardrail Failure Payload</h2>
+      <p>When <code>QueryGuardrails.validate_and_execute(...)</code> rejects a query, it returns:</p>
+      <pre><code>{
+  "success": false,
+  "error": "No index covers filter on field(s): ['company.name']...",
+  "guardrail": "index_coverage",
+  "field": "company.name",
+  "query": "{...raw query...}"
+}</code></pre>
+      <p><code>generated_mql</code> is still available because it is produced before validation.</p>
+    </section>
+
+    <section class="card">
+      <h2>3) Exact UI Render Condition</h2>
+      <pre><code>if (
+    not query_result.get("success")
+    and query_result.get("guardrail")
+    and query_result.get("guardrail") != "execution"
+):
+    guardrail_query_preview = build_guardrail_query_preview(generated_mql)
+    st.markdown("**Generated query (blocked by guardrails):**")
+    st.code(json.dumps(guardrail_query_preview, indent=2, default=str), language="json")</code></pre>
+      <div class="note"><strong>Why exclude <code>execution</code>:</strong> that is a runtime/database failure after guardrails, not a guardrail rejection.</div>
+    </section>
+
+    <section class="card">
+      <h2>4) Query Preview Builder</h2>
+      <p><code>build_guardrail_query_preview(generated_mql)</code> normalizes output for display:</p>
+      <ul>
+        <li>Always includes <code>collection</code> and <code>query_type</code>.</li>
+        <li>For <code>aggregate</code>: includes <code>pipeline</code>.</li>
+        <li>For <code>find</code>: includes <code>filter</code> plus optional <code>projection</code>, <code>sort</code>, <code>limit</code>.</li>
+      </ul>
+      <p>This keeps the visible query concise and readable while preserving what the model generated.</p>
+    </section>
+
+    <section class="card">
+      <h2>5) Persistence Across Reruns</h2>
+      <p>The same query preview is stored in chat history:</p>
+      <pre><code>st.session_state.messages.append({
+  "role": "assistant",
+  "content": response_text,
+  "trace": accumulated_trace,
+  "dataframe": df_data,
+  "guardrail_query": guardrail_query_preview,
+})</code></pre>
+      <p>During history rendering, if <code>msg["guardrail_query"]</code> exists, it is shown again with pretty JSON.</p>
+      <div class="ok"><strong>Result:</strong> users can inspect blocked queries immediately and after any later interaction.</div>
+    </section>
+  </main>
+</body>
+</html>
